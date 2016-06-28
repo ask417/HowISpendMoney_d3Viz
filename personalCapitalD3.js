@@ -24,10 +24,23 @@ var svg = d3.select("body").append("svg")
  	.append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  function sortNumbers(a,b)
-  {
-  	return a.value-b.value;
-  }
+
+var tooltip = d3.select("body")
+    .append("div")
+    .style("position", "absolute")
+    .style("z-index", "10")
+    .style("visibility", "hidden")
+    .text("meh");
+
+function sortNumbers(a,b)
+{
+	return a.value-b.value;
+}
+
+function type(d) {
+  d.value = +d.value;
+  return d;
+}
 
 var sort = false;
 var data = [];
@@ -68,12 +81,20 @@ d3.csv("transactions.csv", type, function(error, data)
   	.attr("width", function(d) { return Math.abs(x(d.value) - x(0)); })
   	.attr("height", y.rangeBand())
     .on("mouseover", function(d) 
-      {
-          d3.select(this).style("fill", "red");
+      {   
+        tooltip.style("visibility", "visible")
+          .text("$"+Math.round(d.value));
+
+        d3.select(this)
+          .style("fill", "red");
       })                  
+    .on("mousemove", function(d)
+      {
+        return tooltip.style("top", y(d.key) + margin.top+10).style("left",(event.pageX+10)+"px")})
     .on("mouseout", function(d) 
       {
-          d3.select(this).style("fill", "#fff8ee");
+          tooltip.style("visibility","hidden");
+          d3.select(this).style("fill", d.value<0 ? "darkorange" : "steelblue");
       });
 
 
@@ -137,24 +158,13 @@ d3.csv("transactions.csv", type, function(error, data)
       .attr("width", function(d) { return Math.abs(x(d.value) - x(0)); })
       .attr("height", y.rangeBand());
 
-
-
-
-    //svg.selectAll(".tick")
     svg.select("g.y.axis").selectAll(".tick")
       .transition()
       .duration(250)
       .delay(function(d, i) { return i * 50; })
       .attr("transform", function(d){
         var blah = y(d)+10;
-        return "translate(0,"+blah+")"});
-
+        return "translate(0,"+blah+")"
+      });
   }
-
-
 });
-
-function type(d) {
-  d.value = +d.value;
-  return d;
-}
