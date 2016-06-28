@@ -24,9 +24,19 @@ var svg = d3.select("body").append("svg")
  	.append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.csv("transactions.csv", type, function(error, data) {
+  function sortNumbers(a,b)
+  {
+  	return a.value-b.value;
+  }
 
-  data.forEach(function(d) {
+var sort = false;
+var data = [];
+
+d3.csv("transactions.csv", type, function(error, data) 
+{
+
+  data.forEach(function(d) 
+  {
     d.Amount = +d.Amount;
   });
 
@@ -36,36 +46,49 @@ d3.csv("transactions.csv", type, function(error, data) {
   for(var i =0; i<data.length; ++i)
   {
   	if(data[i].Category in aggregate)
-	{
-		aggregate[data[i].Category]+=data[i].Amount
-	}
-	else
-	{
-		aggregate[data[i].Category]=data[i].Amount
-	}  	
+  	{
+  		aggregate[data[i].Category]+=data[i].Amount
+  	}
+  	else
+  	{
+  		aggregate[data[i].Category]=data[i].Amount
+  	}  	
   }
 
   x.domain(d3.extent(d3.entries(aggregate), function(d) { return d.value; })).nice();
   y.domain(d3.entries(aggregate).map(function(d) { return d.key; }));
 
 
-
   svg.selectAll(".bar")
-      .data(d3.entries(aggregate))
-    .enter().append("rect")
-      .attr("class", function(d) { return "bar bar--" + (d.value < 0 ? "negative" : "positive"); })
-      .attr("x", function(d) { return x(Math.min(0, d.value)); })
-      .attr("y", function(d) { return y(d.key); })
-      .attr("width", function(d) { return Math.abs(x(d.value) - x(0)); })
-      .attr("height", y.rangeBand());
+    .data(d3.entries(aggregate))
+  	.enter().append("rect")
+  	.attr("class", function(d) { return "bar bar--" + (d.value < 0 ? "negative" : "positive"); })
+  	.attr("x", function(d) { return x(Math.min(0, d.value)); })
+  	.attr("y", function(d) { return y(d.key); })
+  	.attr("width", function(d) { return Math.abs(x(d.value) - x(0)); })
+  	.attr("height", y.rangeBand())
+    .on("mouseover", function(d) 
+      {
+          d3.select(this).style("fill", "red");
+      })                  
+    .on("mouseout", function(d) 
+      {
+          d3.select(this).style("fill", "#fff8ee");
+      });
+
+
   svg.append("g")
+      //.transition().duration(2000)
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
       .call(xAxis);
+
   svg.append("g")
+      //.transition().duration(2000)
       .attr("class", "y axis")
       .attr("transform", "translate(" + x(0) + ",0)")
       .call(yAxis);
+
 
   svg.append("text")
         .attr("x", x(0))             
@@ -84,6 +107,49 @@ d3.csv("transactions.csv", type, function(error, data) {
         .style("text-decoration", "bold")  
         .style("font-family","sans-serif")
         .text("Dollars");
+
+  document.getElementById("click").onclick = function() {sortDisBitch()};
+
+  function sortDisBitch() 
+  {
+
+    if(sort==false)
+    {
+      data = d3.entries(aggregate).sort(sortNumbers);
+      sort=true;
+    }
+    else
+    {
+      data = d3.entries(aggregate);
+      sort=false;
+    }
+
+    y.domain(data.map(function(d) { return d.key; }));
+    x.domain(d3.extent(data, function(d) { return d.value; })).nice();
+
+    svg.selectAll(".bar")
+      .transition()
+      .duration(250)
+      .delay(function(d, i) { return i * 50; })
+      .attr("class", function(d) { return "bar bar--" + (d.value < 0 ? "negative" : "positive"); })
+      .attr("x", function(d) { return x(Math.min(0, d.value)); })
+      .attr("y", function(d) { return y(d.key); })
+      .attr("width", function(d) { return Math.abs(x(d.value) - x(0)); })
+      .attr("height", y.rangeBand());
+
+
+
+
+    //svg.selectAll(".tick")
+    svg.select("g.y.axis").selectAll(".tick")
+      .transition()
+      .duration(250)
+      .delay(function(d, i) { return i * 50; })
+      .attr("transform", function(d){
+        var blah = y(d)+10;
+        return "translate(0,"+blah+")"});
+
+  }
 
 
 });
